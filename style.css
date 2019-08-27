@@ -98,3 +98,45 @@ body {
   .zone.static {
     background: rgba(255, 0, 0, 0.1);
   }
+  .demo-card-wide.mdl-card {
+    width: 512px;
+}
+
+.demo-card-wide>.mdl-card__title {
+    color: #fff;
+    height: 176px;
+    background: url('assets/talking-skull-banner-da.jpg') center / cover;
+}
+
+.demo-card-wide>.mdl-card__menu {
+    color: #fff;
+}
+
+.demo-layout-transparent {
+    background: url('assets/talking-skull-banner-da.jpg') center / cover;
+}
+
+.demo-layout-transparent .mdl-layout__header,
+.demo-layout-transparent .mdl-layout__drawer-button {
+    /* This background is dark, so we set text to white. Use 87% black instead if
+your background is light. */
+    color: white;
+}
+
+#left {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 50%;
+    background: rgba(0, 255, 0, 0.1);
+}
+
+#right {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 50%;
+    background: rgba(0, 0, 255, 0.1);
+}

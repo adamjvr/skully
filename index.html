@@ -2,66 +2,168 @@
 <html>
 
 <head>
-    <link rel='stylesheet' href='http://yoannmoinet.github.io/nipplejs/stylesheets/styles.css'>
-    <link rel='stylesheet' href='http://yoannmoinet.github.io/nipplejs/stylesheets/github-light.css'>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
-
-    <meta name="viewport" content="width=device-width, initial-scale=0.5, maximum-scale=0.5">
-    <style>
-        .demo-card-wide.mdl-card {
-            width: 512px;
-        }
-
-        .demo-card-wide>.mdl-card__title {
-            color: #fff;
-            height: 176px;
-            background: url('assets/talking-skull-banner-da.jpg') center / cover;
-        }
-
-        .demo-card-wide>.mdl-card__menu {
-            color: #fff;
-        }
-
-        .demo-layout-transparent {
-            background: url('assets/talking-skull-banner-da.jpg') center / cover;
-        }
-
-        .demo-layout-transparent .mdl-layout__header,
-        .demo-layout-transparent .mdl-layout__drawer-button {
-            /* This background is dark, so we set text to white. Use 87% black instead if
-     your background is light. */
-            color: white;
-        }
-
-        #left {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 50%;
-            background: rgba(0, 255, 0, 0.1);
-        }
-
-        #right {
-            position: absolute;
-            right: 0;
-            top: 0;
-            height: 100%;
-            width: 50%;
-            background: rgba(0, 0, 255, 0.1);
-        }
-    </style>
 </head>
 
 <body>
+    <script>
+        var haveEvents = 'ongamepadconnected' in window;
+        var controllers = {};
+
+        function connecthandler(e) {
+            addgamepad(e.gamepad);
+        }
+
+        function addgamepad(gamepad) {
+            controllers[gamepad.index] = gamepad;
+
+            var d = document.createElement("div");
+            d.setAttribute("id", "controller" + gamepad.index);
+
+            var t = document.createElement("h1");
+            t.appendChild(document.createTextNode("gamepad: " + gamepad.id));
+            d.appendChild(t);
+
+            // var b = document.createElement("div");
+            // b.className = "buttons";
+            // for (var i = 0; i < gamepad.buttons.length; i++) {
+            //     var e = document.createElement("span");
+            //     e.className = "button";
+            //     //e.id = "b" + i;
+            //     e.innerHTML = i;
+            //     b.appendChild(e);
+            // }
+
+            // d.appendChild(b);
+
+            var a = document.createElement("div");
+            a.className = "axes";
+
+            for (var i = 0; i < gamepad.axes.length; i++) {
+                var p = document.createElement("progress");
+                p.className = "axis";
+                //p.id = "a" + i;
+                p.setAttribute("max", "2");
+                p.setAttribute("value", "1");
+                p.innerHTML = i;
+                a.appendChild(p);
+            }
+
+            d.appendChild(a);
+
+            // See https://github.com/luser/gamepadtest/blob/master/index.html
+            var start = document.getElementById("start");
+            if (start) {
+                start.style.display = "none";
+            }
+
+            document.body.appendChild(d);
+            requestAnimationFrame(updateStatus);
+        }
+
+        function disconnecthandler(e) {
+            removegamepad(e.gamepad);
+        }
+
+        function removegamepad(gamepad) {
+            var d = document.getElementById("controller" + gamepad.index);
+            document.body.removeChild(d);
+            delete controllers[gamepad.index];
+        }
+
+        async function updateStatus() {
+            if (!haveEvents) {
+                scangamepads();
+            }
+
+            var i = 0;
+            var j;
+
+            for (j in controllers) {
+                var controller = controllers[j];
+                var d = document.getElementById("controller" + j);
+                var buttons = d.getElementsByClassName("button");
+
+                // for (i = 0; i < controller.buttons.length; i++) {
+                //     var b = buttons[i];
+                //     var val = controller.buttons[i];
+                //     var pressed = val == 1.0;
+                //     if (typeof (val) == "object") {
+                //         pressed = val.pressed;
+                //         val = val.value;
+                //     }
+
+                //     var pct = Math.round(val * 100) + "%";
+                //     b.style.backgroundSize = pct + " " + pct;
+
+                //     if (pressed) {
+                //         b.className = "button pressed";
+                //     } else {
+                //         b.className = "button";
+                //     }
+                // }
+
+                var axes = d.getElementsByClassName("axis");
+                for (i = 0; i < controller.axes.length; i++) {
+                    var a = axes[i];
+                    a.innerHTML = i + ": " + controller.axes[i].toFixed(4);
+                    a.setAttribute("value", controller.axes[i] + 1);
+                    if (i === 0) {
+                        var tiltSlider = document.getElementById("tilt");
+                        var tiltValue = parseInt(1100 + ((1600 - 1100) / 2) * (controller.axes[i] + 1));
+                        tiltSlider.value = tiltValue
+                        socket.emit("tilt", Number(tiltValue)); //send button status to server (as 1 or 0)
+                    }
+                    if (i === 1) {
+                        var nodSlider = document.getElementById("nod");
+                        var nodValue = parseInt(1100 + ((1600 - 1100) / 2) * (controller.axes[i] + 1));
+                        nodSlider.value = nodValue;
+                        socket.emit("nod", Number(nodValue)); //send button status to server (as 1 or 0)
+                    }
+                    if (i === 2) {
+                        var rotateSlider = document.getElementById("rotate");
+                        var rotateValue = parseInt(500 + ((2000 - 500) / 2) * (controller.axes[i] + 1));
+                        rotateSlider.value = rotateValue;
+                        socket.emit("rotate", Number(rotateValue)); //send button status to server (as 1 or 0)
+                    }
+                }
+            }
+
+            await sleep(200);
+            requestAnimationFrame(updateStatus);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function scangamepads() {
+            var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
+            for (var i = 0; i < gamepads.length; i++) {
+                if (gamepads[i]) {
+                    if (gamepads[i].index in controllers) {
+                        controllers[gamepads[i].index] = gamepads[i];
+                    } else {
+                        addgamepad(gamepads[i]);
+                    }
+                }
+            }
+        }
+
+
+        window.addEventListener("gamepadconnected", connecthandler);
+        window.addEventListener("gamepaddisconnected", disconnecthandler);
+
+        if (!haveEvents) {
+            setInterval(scangamepads, 500);
+        }
+    </script>
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" crossorigin="anonymous">
     <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css" crossorigin="anonymous">
     <script defer src="https://code.getmdl.io/1.3.0/material.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.js"
-        integrity="sha256-qASUmabnTD82i6vUIeEaVDAiw0xXXk4MMs+kpeKEa9c=" crossorigin="anonymous"></script>
     <script rel="stylesheet" href="style.css" crossorigin="anonymous"></script>
     <div class="demo-card-wide mdl-card mdl-shadow--2dp">
         <div class="mdl-card__title">
@@ -79,87 +181,37 @@
                 step="50">
             <h3>mouth</h3>
             <input class="mdl-slider mdl-js-slider" type="range" id="mouth" min="500" max="2500" value="1000" step="20">
-
-            <div class="static highlight highlight-javascript">
-                here's the div!
-            </div>
-
-            <div id="zone_joystick">
-
-                <div id="debug">
-                    <ul>
-                        <li class="position">
-                            position :
-                            <ul>
-                                <li class="x">x : <span class='data'></span></li>
-                                <li class="y">y : <span class='data'></span></li>
-                            </ul>
-                        </li>
-                        <li class="force">force : <span class='data'></span></li>
-                        <li class="pressure">pressure : <span class='data'></span></li>
-                        <li class="distance">distance : <span class='data'></span></li>
-                        <li class="angle">
-                            angle :
-                            <ul>
-                                <li class="radian">radian : <span class='data'></span></li>
-                                <li class="degree">degree : <span class='data'></span></li>
-                            </ul>
-                        </li>
-                        <li class="direction">
-                            direction :
-                            <ul>
-                                <li class="x">x : <span class='data'></span></li>
-                                <li class="y">y : <span class='data'></span></li>
-                                <li class="angle">angle : <span class='data'></span></li>
-                            </ul>
-                        </li>
-                    </ul>
-
-
-                    <script>
-                        window.addEventListener("load", function () {
-                            var static = nipplejs.create({
-                                zone: document.getElementById('static'),
-                                mode: 'static',
-                                position: { left: '50%', top: '50%' },
-                                color: 'red'
-                            });
-                        });
-                    </script>
-
-                    <!-- include socket.io client side script -->
-                    <script>
-                        var socket = io(); //load socket.io-client and connect to the host that serves the page
-                        window.addEventListener("load", function () { //when page loads
-
-                            var rotateSlider = document.getElementById("tilt");
-                            rotateSlider.addEventListener("input", function () { //add event listener for when checkbox changes
-                                console.info(this.value);
-                                socket.emit("tilt", Number(this.value)); //send button status to server (as 1 or 0)
-                            });
-
-                            var nodSlider = document.getElementById("nod");
-                            nodSlider.addEventListener("input", function () { //add event listener for when checkbox changes
-                                socket.emit("nod", Number(this.value)); //send button status to server (as 1 or 0)
-                            });
-
-                            var rotateSlider = document.getElementById("rotate");
-                            rotateSlider.addEventListener("input", function () { //add event listener for when checkbox changes
-                                socket.emit("rotate", Number(this.value)); //send button status to server (as 1 or 0)
-                            });
-                            var mouthSlider = document.getElementById("mouth");
-                            mouthSlider.addEventListener("input", function () { //add event listener for when checkbox changes
-                                socket.emit("mouth", Number(this.value)); //send button status to server (as 1 or 0)
-                            });
-                        });
-                        socket.on('rotate', function (data) { //get button status from client
-                            document.getElementById("rotate").value = data; //change checkbox according to push button on Raspberry Pi
-                            socket.emit("rotate", data); //send push button status to back to server
-                        });
-                    </script>
-                </div>
-            </div>
         </div>
+    </div>
+    <script>
+        var socket = io(); //load socket.io-client and connect to the host that serves the page
+        window.addEventListener("load", function () { //when page loads
+
+            var rotateSlider = document.getElementById("tilt");
+            rotateSlider.addEventListener("input", function () { //add event listener for when checkbox changes
+                console.info(this.value);
+                ////     socket.emit("tilt", Number(this.value)); //send button status to server (as 1 or 0)
+            });
+
+            var nodSlider = document.getElementById("nod");
+            nodSlider.addEventListener("input", function () { //add event listener for when checkbox changes
+                ////     socket.emit("nod", Number(this.value)); //send button status to server (as 1 or 0)
+            });
+
+            var rotateSlider = document.getElementById("rotate");
+            rotateSlider.addEventListener("input", function () { //add event listener for when checkbox changes
+                ////     socket.emit("rotate", Number(this.value)); //send button status to server (as 1 or 0)
+            });
+            var mouthSlider = document.getElementById("mouth");
+            mouthSlider.addEventListener("input", function () { //add event listener for when checkbox changes
+                ////    socket.emit("mouth", Number(this.value)); //send button status to server (as 1 or 0)
+            });
+        });
+        socket.on('rotate', function (data) { //get button status from client
+            document.getElementById("rotate").value = data; //change checkbox according to push button on Raspberry Pi
+            socket.emit("rotate", data); //send push button status to back to server
+        });
+    </script>
 </body>
 
 </html>

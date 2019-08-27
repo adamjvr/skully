@@ -10,7 +10,7 @@ const mouthMotor = new Gpio(5, { mode: Gpio.OUTPUT });
 const port = 8080;
 
 http.listen(parseInt(port));
-console.info(`Ready to do your bidding ${port}`)
+console.info(`Ready to do your bidding on port ${port}`)
 
 var positions = {
   rotate: 1500,
@@ -23,19 +23,19 @@ move(positions);
 
 io.sockets.on('connection', function (socket) {
   socket.on('rotate', function (data) {
-    positions.rotate = data;
+    positions.rotate = parseInt(data);
     move(positions);
   });
   socket.on('tilt', function (data) {
-    positions.tilt = data;
+    positions.tilt = parseInt(data);
     move(positions);
   });
   socket.on('nod', function (data) {
-    positions.nod = data;
+    positions.nod = parseInt(data);
     move(positions);
   });
   socket.on('mouth', function (data) {
-    positions.mouth = data;
+    positions.mouth = parseInt(data);
     move(positions);
   });
 
