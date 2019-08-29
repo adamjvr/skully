@@ -11,8 +11,10 @@ function server(req, res) {
   // Avoid https://en.wikipedia.org/wiki/Directory_traversal_attack
   // e.g curl --path-as-is http://localhost:9000/../fileInDanger.txt
   // by limiting the path to current directory only
-  const sanitizePath = path.normalize(parsedUrl.pathname).replace(/^(\.\.[\/\\])+/, '');
-  let pathname = path.join(__dirname, sanitizePath);
+  
+  //const sanitizePath = path.normalize(parsedUrl.pathname).replace(/^(\.\.[\/\\])+/, '');
+  
+  let pathname = path.join(__dirname, path.normalize(parsedUrl.pathname));
   fs.exists(pathname, function (exist) {
     if (!exist) {
       // if the file is not found, return 404

@@ -1,0 +1,42 @@
+[
+  {
+    "pinNumber": 26,
+    "description": "rotate",
+    "minValue": 600,
+    "maxValue": 1500,
+    "centerPosition": 1000,
+    "maxMove": 10,
+    "currentPosition": 1000,
+    "desiredPosition": 1000
+  },
+  {
+    "pinNumber": 6,
+    "description": "tilt",
+    "minValue": 1100,
+    "maxValue": 1600,
+    "centerPosition": 1400,
+    "maxMove": 10,
+    "currentPosition": 1000,
+    "desiredPosition": 1000
+  },
+  {
+    "pinNumber": 13,
+    "description": "nod",
+    "minValue": 1100,
+    "maxValue": 1600,
+    "centerPosition": 1400,
+    "maxMove": 10,
+    "currentPosition": 1000,
+    "desiredPosition": 1000
+  },
+  {
+    "pinNumber": 5,
+    "description": "mouth",
+    "minValue": 1100,
+    "maxValue": 1600,
+    "centerPosition": 1400,
+    "maxMove": 10,
+    "currentPosition": 1000,
+    "desiredPosition": 1000
+  }
+]

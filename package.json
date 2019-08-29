@@ -1,0 +1,24 @@
+{
+  "name": "skully",
+  "version": "1.0.0",
+  "description": "Animatronic head controller",
+  "main": "skully.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node skully.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JustDan1979/skully.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JustDan1979/skully/issues"
+  },
+  "homepage": "https://github.com/JustDan1979/skully#readme",
+  "dependencies": {
+    "detect-rpi": "^1.3.0",
+    "socket.io": "^2.2.0"
+  }
+}
