@@ -10,13 +10,11 @@ if (isPi()) {
 }
 
 var path = process.cwd();
-var buffer = fs.readFileSync(path + "\\servoDefinitions.json");
+var buffer = fs.readFileSync(path + "/servoDefinitions.json");
 let servoDefinitions = JSON.parse(buffer);
 
 if (isPi()) {
   servoDefinitions.forEach(function (servo) {
-    servo.gpio = new Gpio(servo.pinNumber, { mode: Gpio.INPUT });
-    servo.currentPosition = servo.gpio.input();
     servo.gpio = new Gpio(servo.pinNumber, { mode: Gpio.OUTPUT });
   });
 } else {
