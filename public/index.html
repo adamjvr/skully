@@ -84,6 +84,28 @@
                     var d = document.getElementById("controller" + j);
                     var buttons = d.getElementsByClassName("button");
 
+                    var mouthSlider = document.getElementById("mouth");
+                    var mouthValue = parseInt(parseInt(mouthSlider.min) + (mouthSlider.max - mouthSlider.min) * controller.buttons[7].value);
+                    mouthSlider.value = mouthValue;
+                    socket.emit("mouth", Number(mouthValue));
+
+                    var rotateSlider = document.getElementById("rotate");
+                    var rotateAxis = controller.axes[2] + 1;
+                    
+                    var rotateValue = rotateSlider.center;
+                    if (rotateAxis < 1) {
+                        rotateValue = parseInt(Number(rotateSlider.min) + (Number(rotateSlider.center) - rotateSlider.min) * rotateAxis);
+                    } else if (rotateAxis > 1) {
+                        rotateValue = parseInt(Number(rotateSlider.center) + (rotateSlider.max - rotateSlider.center) * (rotateAxis - 1));
+                    }
+
+                    rotateSlider.value = rotateValue;
+                    socket.emit("rotate", Number(rotateValue));
+
+                    if (controller.buttons[9].value === 1) {
+                        socket.emit("center");
+                    }
+
                     var axes = d.getElementsByClassName("axis");
                     for (i = 0; i < controller.axes.length; i++) {
                         var a = axes[i];
@@ -101,16 +123,10 @@
                             nodSlider.value = nodValue;
                             socket.emit("nod", Number(nodValue)); //send button status to server (as 1 or 0)
                         }
-                        if (i === 2) {
-                            var rotateSlider = document.getElementById("rotate");
-                            var rotateValue = parseInt(500 + ((2000 - 500) / 2) * (controller.axes[i] + 1));
-                            rotateSlider.value = rotateValue;
-                            socket.emit("rotate", Number(rotateValue)); //send button status to server (as 1 or 0)
-                        }
                     }
                 }
 
-                await sleep(200);
+                await sleep(100);
                 requestAnimationFrame(updateStatus);
             }
 
@@ -136,7 +152,7 @@
             window.addEventListener("gamepaddisconnected", disconnecthandler);
 
             if (!haveEvents) {
-                setInterval(scangamepads, 500);
+                setInterval(scangamepads, 100);
             }
         </script>
 
@@ -145,9 +161,12 @@
             var socket = io(); //load socket.io-client and connect to the host that serves the page
             window.addEventListener("load", function () { //when page loads
                 socket.on('send servoDefinitions', function (data) { //get button status from client
-                    console.log(data);
+                    var container = document.getElementById("servoControl");
+                    while (container.firstChild) {
+                        container.removeChild(container.firstChild);
+                    }
+
                     data.forEach(function (servoDefinition) {
-                        var container = document.getElementById("servoControl");
                         var label = document.createElement("h3");
                         label.innerHTML = servoDefinition.description;
                         container.appendChild(label);
@@ -157,6 +176,7 @@
                         slider.max = servoDefinition.maxValue;
                         slider.value = servoDefinition.currentPosition;
                         slider.id = servoDefinition.description;
+                        slider.center = servoDefinition.centerPosition;
                         slider.addEventListener("input", function () {
                             socket.emit(servoDefinition.description, Number(this.value));
                         });
