@@ -2,10 +2,10 @@
   "name": "skully",
   "version": "1.0.0",
   "description": "Animatronic head controller",
-  "main": "skully.js",
+  "main": "src/skully.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node skully.js"
+    "start": "node -r esm src/skully.js"
   },
   "repository": {
     "type": "git",
@@ -18,8 +18,13 @@
   },
   "homepage": "https://github.com/JustDan1979/skully#readme",
   "dependencies": {
-    "play-sound": "^1.1.3",
     "detect-rpi": "^1.3.0",
+    "esm": "^3.2.25",
+    "play-sound": "^1.1.3",
     "socket.io": "^2.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^6.4.0",
+    "eslint-config-google": "^0.14.0"
   }
 }

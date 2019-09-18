@@ -1,190 +1,223 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<body>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
-    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <title>Skully</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js" crossorigin="anonymous"></script>
-    <script rel="stylesheet" href="style.css" crossorigin="anonymous"></script>
+    <meta name="description" content="Source code generated using layoutit.com">
+    <meta name="author" content="LayoutIt!">
 
-    <div class="demo-card-wide mdl-card mdl-shadow--2dp">
-        <div class="mdl-card__title">
-            <h2 class="mdl-card__title-text">Welcome</h2>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <script src="js/socket.io.js"></script>
+  </head>
+  <body>
+    <div class="container-fluid">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="page-header">
+				<h1>
+					Skully
+				</h1>
+            </div>
         </div>
-        <div>
-
-            <h1>Manual Control</h1>
-            <div id="servoControl"></div>
+        <div class="col-md-6">
+			<div class="card bg-default">
+				<h5 class="card-header">
+					Manual Control
+				</h5>
+				<div class="card-body">
+					<p class="card-text">
+						<div id="servoControl"></div>
+					</p>
+				</div>
+            </div>
         </div>
+        <div class="col-md-6">
+			<div class="card">
+				<h5 class="card-header">
+					Songs
+				</h5>
+				<div class="card-body">
+					<p class="card-text">
+						<div id="songs"></div>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+    var haveEvents = 'ongamepadconnected' in window;
+    var controllers = {};
 
-        <script>
-            var haveEvents = 'ongamepadconnected' in window;
-            var controllers = {};
+    function connecthandler(e) {
+        addgamepad(e.gamepad);
+    }
 
-            function connecthandler(e) {
-                addgamepad(e.gamepad);
+    function addgamepad(gamepad) {
+        controllers[gamepad.index] = gamepad;
+        requestAnimationFrame(updateStatus);
+    }
+
+    function disconnecthandler(e) {
+        removegamepad(e.gamepad);
+    }
+
+    function removegamepad(gamepad) {
+        delete controllers[gamepad.index];
+    }
+
+    async function updateStatus() {
+        if (!haveEvents) {
+            scangamepads();
+        }
+
+        var i = 0;
+        var j;
+
+        for (j in controllers) {
+            var controller = controllers[j];
+            if (controller.buttons[3].value === 1 && typeof controller.buttons[3].lastValue === 'undefined' || controller.buttons[3].lastValue === 0) {
+                controller.buttons[3].lastValue
             }
 
-            function addgamepad(gamepad) {
-                controllers[gamepad.index] = gamepad;
+            var mouthSlider = document.getElementById("mouth");
+            var mouthValue = parseInt(parseInt(mouthSlider.min) + (mouthSlider.max - mouthSlider.min) * controller.buttons[7].value);
+            mouthSlider.value = mouthValue;
+            socket.emit("mouth", Number(mouthValue));
 
-                var d = document.createElement("div");
-                d.setAttribute("id", "controller" + gamepad.index);
+            var rotateSlider = document.getElementById("rotate");
+            var rotateAxis = controller.axes[2] + 1;
 
-                var t = document.createElement("h1");
-                t.appendChild(document.createTextNode("gamepad: " + gamepad.id));
-                d.appendChild(t);
+            var rotateValue = rotateSlider.center;
+            if (rotateAxis < 1) {
+                rotateValue = parseInt(Number(rotateSlider.min) + (Number(rotateSlider.center) - rotateSlider.min) * rotateAxis);
+            } else if (rotateAxis > 1) {
+                rotateValue = parseInt(Number(rotateSlider.center) + (rotateSlider.max - rotateSlider.center) * (rotateAxis - 1));
+            }
 
-                var a = document.createElement("div");
-                a.className = "axes";
+            rotateSlider.value = rotateValue;
+            socket.emit("rotate", Number(rotateValue));
 
-                for (var i = 0; i < gamepad.axes.length; i++) {
-                    var p = document.createElement("progress");
-                    p.className = "axis";
-                    p.setAttribute("max", "2");
-                    p.setAttribute("value", "1");
-                    p.innerHTML = i;
-                    a.appendChild(p);
+            if (controller.buttons[9].value === 1) {
+                socket.emit("center");
+            }
+
+            for (i = 0; i < controller.axes.length; i++) {
+                if (i === 0) {
+                    var tiltSlider = document.getElementById("tilt");
+                    var tiltValue = parseInt(1100 + ((1600 - 1100) / 2) * (controller.axes[i] + 1));
+                    tiltSlider.value = tiltValue
+                    socket.emit("tilt", Number(tiltValue)); //send button status to server (as 1 or 0)
                 }
-
-                d.appendChild(a);
-
-                // See https://github.com/luser/gamepadtest/blob/master/index.html
-                var start = document.getElementById("start");
-                if (start) {
-                    start.style.display = "none";
-                }
-
-                document.body.appendChild(d);
-                requestAnimationFrame(updateStatus);
-            }
-
-            function disconnecthandler(e) {
-                removegamepad(e.gamepad);
-            }
-
-            function removegamepad(gamepad) {
-                var d = document.getElementById("controller" + gamepad.index);
-                document.body.removeChild(d);
-                delete controllers[gamepad.index];
-            }
-
-            async function updateStatus() {
-                if (!haveEvents) {
-                    scangamepads();
-                }
-
-                var i = 0;
-                var j;
-
-                for (j in controllers) {
-                    var controller = controllers[j];
-                    var d = document.getElementById("controller" + j);
-                    var buttons = d.getElementsByClassName("button");
-
-                    var mouthSlider = document.getElementById("mouth");
-                    var mouthValue = parseInt(parseInt(mouthSlider.min) + (mouthSlider.max - mouthSlider.min) * controller.buttons[7].value);
-                    mouthSlider.value = mouthValue;
-                    socket.emit("mouth", Number(mouthValue));
-
-                    var rotateSlider = document.getElementById("rotate");
-                    var rotateAxis = controller.axes[2] + 1;
-                    
-                    var rotateValue = rotateSlider.center;
-                    if (rotateAxis < 1) {
-                        rotateValue = parseInt(Number(rotateSlider.min) + (Number(rotateSlider.center) - rotateSlider.min) * rotateAxis);
-                    } else if (rotateAxis > 1) {
-                        rotateValue = parseInt(Number(rotateSlider.center) + (rotateSlider.max - rotateSlider.center) * (rotateAxis - 1));
-                    }
-
-                    rotateSlider.value = rotateValue;
-                    socket.emit("rotate", Number(rotateValue));
-
-                    if (controller.buttons[9].value === 1) {
-                        socket.emit("center");
-                    }
-
-                    var axes = d.getElementsByClassName("axis");
-                    for (i = 0; i < controller.axes.length; i++) {
-                        var a = axes[i];
-                        a.innerHTML = i + ": " + controller.axes[i].toFixed(4);
-                        a.setAttribute("value", controller.axes[i] + 1);
-                        if (i === 0) {
-                            var tiltSlider = document.getElementById("tilt");
-                            var tiltValue = parseInt(1100 + ((1600 - 1100) / 2) * (controller.axes[i] + 1));
-                            tiltSlider.value = tiltValue
-                            socket.emit("tilt", Number(tiltValue)); //send button status to server (as 1 or 0)
-                        }
-                        if (i === 1) {
-                            var nodSlider = document.getElementById("nod");
-                            var nodValue = parseInt(1100 + ((1600 - 1100) / 2) * (controller.axes[i] + 1));
-                            nodSlider.value = nodValue;
-                            socket.emit("nod", Number(nodValue)); //send button status to server (as 1 or 0)
-                        }
-                    }
-                }
-
-                await sleep(100);
-                requestAnimationFrame(updateStatus);
-            }
-
-            function sleep(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-            }
-
-            function scangamepads() {
-                var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
-                for (var i = 0; i < gamepads.length; i++) {
-                    if (gamepads[i]) {
-                        if (gamepads[i].index in controllers) {
-                            controllers[gamepads[i].index] = gamepads[i];
-                        } else {
-                            addgamepad(gamepads[i]);
-                        }
-                    }
+                if (i === 1) {
+                    var nodSlider = document.getElementById("nod");
+                    var nodValue = parseInt(1100 + ((1600 - 1100) / 2) * (controller.axes[i] + 1));
+                    nodSlider.value = nodValue;
+                    socket.emit("nod", Number(nodValue)); //send button status to server (as 1 or 0)
                 }
             }
+        }
 
+        await sleep(100);
+        requestAnimationFrame(updateStatus);
+    }
 
-            window.addEventListener("gamepadconnected", connecthandler);
-            window.addEventListener("gamepaddisconnected", disconnecthandler);
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
-            if (!haveEvents) {
-                setInterval(scangamepads, 100);
+    function scangamepads() {
+        var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
+        for (var i = 0; i < gamepads.length; i++) {
+            if (gamepads[i]) {
+                if (gamepads[i].index in controllers) {
+                    controllers[gamepads[i].index] = gamepads[i];
+                } else {
+                    addgamepad(gamepads[i]);
+                }
             }
-        </script>
+        }
+    }
 
-        <!-- include socket.io client side script -->
-        <script>
-            var socket = io(); //load socket.io-client and connect to the host that serves the page
-            window.addEventListener("load", function () { //when page loads
-                socket.on('send servoDefinitions', function (data) { //get button status from client
-                    var container = document.getElementById("servoControl");
-                    while (container.firstChild) {
-                        container.removeChild(container.firstChild);
-                    }
 
-                    data.forEach(function (servoDefinition) {
-                        var label = document.createElement("h3");
-                        label.innerHTML = servoDefinition.description;
-                        container.appendChild(label);
-                        var slider = document.createElement("input");
-                        slider.type = "range";
-                        slider.min = servoDefinition.minValue;
-                        slider.max = servoDefinition.maxValue;
-                        slider.value = servoDefinition.currentPosition;
-                        slider.id = servoDefinition.description;
-                        slider.center = servoDefinition.centerPosition;
-                        slider.addEventListener("input", function () {
-                            socket.emit(servoDefinition.description, Number(this.value));
-                        });
-                        container.appendChild(slider);
-                    });
+    window.addEventListener("gamepadconnected", connecthandler);
+    window.addEventListener("gamepaddisconnected", disconnecthandler);
+
+    if (!haveEvents) {
+        setInterval(scangamepads, 100);
+    }
+</script>
+
+<!-- include socket.io client side script -->
+<script>
+    var socket = io(); //load socket.io-client and connect to the host that serves the page
+    window.addEventListener("load", function () { //when page loads
+        socket.on('send songDefinitions', function (data) {
+            var container = document.getElementById("songs");
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+            console.info(JSON.stringify(data));
+            data.forEach(function (songDefinition) {
+                var label = document.createElement("h3");
+                label.innerHTML = songDefinition.display;
+                container.appendChild(label);
+
+                var playButton = document.createElement("button");
+                var playButtonLabel = document.createTextNode('Play');
+                playButton.appendChild(playButtonLabel);
+
+                playButton.value = "Play";
+                playButton.addEventListener("click", function () {
+                    socket.emit(songDefinition.id, "play");
                 });
-            });
-        </script>
-</body>
+                container.appendChild(playButton);
 
+                var recordButton = document.createElement("button");
+                var recordButtonLabel = document.createTextNode('Record');
+                recordButton.appendChild(recordButtonLabel);
+
+                recordButton.value = "Record";
+                recordButton.addEventListener("click", function () {
+                    socket.emit(songDefinition.id, "record");
+                });
+                container.appendChild(recordButton);
+            });
+        });
+
+        socket.on('send servoDefinitions', function (data) {
+            var container = document.getElementById("servoControl");
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+
+            data.forEach(function (servoDefinition) {
+                var label = document.createElement("h3");
+                label.innerHTML = servoDefinition.description;
+                container.appendChild(label);
+                var slider = document.createElement("input");
+                slider.type = "range";
+                slider.min = servoDefinition.minValue;
+                slider.max = servoDefinition.maxValue;
+                slider.value = servoDefinition.currentPosition;
+                slider.id = servoDefinition.description;
+                slider.center = servoDefinition.centerPosition;
+                slider.addEventListener("input", function () {
+                    socket.emit(servoDefinition.description, Number(this.value));
+                });
+                container.appendChild(slider);
+                servoDefinition.slider = slider;
+            });
+        });
+    });
+</script>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/scripts.js"></script>
+  </body>
 </html>
