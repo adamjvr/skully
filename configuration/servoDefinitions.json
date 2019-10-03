@@ -1,16 +1,18 @@
 [
  {
-  "pinNumber": 26,
+  "pinNumber": 6,
+  "id": "rotate",
   "description": "rotate",
   "minValue": 1100,
-  "maxValue": 1600,
-  "centerPosition": 1350,
+  "maxValue": 1700,
+  "centerPosition": 1300,
   "maxMove": 10,
-  "currentPosition": 1000,
-  "desiredPosition": 1350
+  "currentPosition": 1300,
+  "desiredPosition": 1300
  },
  {
-  "pinNumber": 6,
+  "pinNumber": 13,
+  "id": "tilt",
   "description": "tilt",
   "minValue": 1100,
   "maxValue": 1600,
@@ -20,7 +22,8 @@
   "desiredPosition": 1434
  },
  {
-  "pinNumber": 13,
+  "pinNumber": 5,
+  "id": "nod",
   "description": "nod",
   "minValue": 1100,
   "maxValue": 1600,
@@ -30,7 +33,8 @@
   "desiredPosition": 1285
  },
  {
-  "pinNumber": 5,
+  "pinNumber": 26,
+  "id": "mouth",
   "description": "mouth",
   "minValue": 600,
   "maxValue": 1300,
@@ -38,5 +42,16 @@
   "maxMove": 100,
   "currentPosition": 600,
   "desiredPosition": 600
- }
-]
+ },
+ {
+    "pinNumber": 12,
+    "id": "cydney",
+    "description": "cydney",
+    "minValue": 600,
+    "maxValue": 1800,
+    "centerPosition": 600,
+    "maxMove": 100,
+    "currentPosition": 600,
+    "desiredPosition": 600
+   }
+  ]

@@ -3,6 +3,36 @@
         "id": "bad",
         "display": "Bad To The Bone",
         "fileName": "bad_to_the_bone.mp3",
-        "length": 303
+        "length": 90
+    },
+    {
+        "id": "ghostbusters",
+        "display": "Ghost Busters",
+        "fileName": "ghostbusters.mp3",
+        "length": 156
+    },
+    {
+        "id": "remember",
+        "display": "Remember Me",
+        "fileName": "remember_me.mp3",
+        "length": 64
+    },
+    {
+        "id": "spell",
+        "display": "I Put a Spell On You",
+        "fileName": "spell.mp3",
+        "length": 64
+    },
+    {
+        "id": "halloween",
+        "display": "This is Halloween",
+        "fileName": "this_is_halloween.mp3",
+        "length": 65
+    },
+    {
+        "id": "witchdoctor",
+        "display": "Witch Doctor",
+        "fileName": "witch_doctor.mp3",
+        "length": 65
     }
 ]

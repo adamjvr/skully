@@ -90,6 +90,12 @@
             mouthSlider.value = mouthValue;
             socket.emit("mouth", Number(mouthValue));
 
+            var cydneySlider = document.getElementById("cydney");
+            var cydneyValue = parseInt(parseInt(cydneySlider.min) + (cydneySlider.max - cydneySlider.min) * controller.buttons[6].value);
+            cydneySlider.value = cydneyValue;
+            socket.emit("cydney", Number(cydneyValue));
+
+
             var rotateSlider = document.getElementById("rotate");
             var rotateAxis = controller.axes[2] + 1;
 
@@ -213,6 +219,26 @@
                 container.appendChild(slider);
                 servoDefinition.slider = slider;
             });
+        });
+
+        socket.on('nod', function(data) {
+            let slider = document.getElementById("nod");
+            slider.value = data;
+        });
+
+        socket.on('tilt', function(data) {
+            let slider = document.getElementById("tilt");
+            slider.value = data;
+        });
+        
+        socket.on('rotate', function(data) {
+            let slider = document.getElementById("rotate");
+            slider.value = data;
+        });
+
+        socket.on('mouth', function(data) {
+            let slider = document.getElementById("mouth");
+            slider.value = data;
         });
     });
 </script>
