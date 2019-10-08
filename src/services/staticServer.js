@@ -8,7 +8,7 @@ const URL = require('url');
  * @param {string} req
  * @param {string} res
  */
-function server(req, res) {
+function staticServer(req, res) {
   console.info(`${req.method} ${req.url}`);
   // parse URL
   const parsedUrl = URL.parse(req.url);
@@ -18,7 +18,11 @@ function server(req, res) {
   // by limiting the path to current directory only
   // const sanitizePath = path.normalize(parsedUrl.pathname).replace(/^(\.\.[\/\\])+/, '');
 
-  let pathname = path.join(process.cwd(), 'public', path.normalize(parsedUrl.pathname));
+  let pathname = path.join(
+      process.cwd(),
+      'public',
+      path.normalize(parsedUrl.pathname)
+  );
   fs.exists(pathname, function(exist) {
     if (!exist) {
       // if the file is not found, return 404
@@ -46,4 +50,4 @@ function server(req, res) {
   });
 }
 
-exports.server = server;
+exports.staticServer = staticServer;

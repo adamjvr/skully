@@ -1,83 +1,91 @@
-import { server } from "./server";
-import { performance } from "perf_hooks";
-import { readFileSync, appendFileSync, existsSync } from "fs";
-import { mode } from "./mode";
+import {readFileSync, appendFileSync, existsSync} from 'fs';
 
-const isPi = require("detect-rpi");
-const http = require("http");
-const socket = http.createServer(server);
-const io = require("socket.io")(socket);
-const player = require("play-sound")();
-const path = require("path");
-const Gpio = isPi() ? require("pigpio").Gpio : null;
-let OnOff = require("onoff").Gpio; //include onoff to interact with the GPIO
+import {mode} from './mode';
 
-const lineByLine = require("n-readlines");
+const Gpio = require('pigpio').Gpio;
 
-const LED = new OnOff(25, "out"); //use GPIO pin 4 as output
-const pushButton = new OnOff(23, "in", "both"); //use GPIO pin 17 as input, and 'both' button presses, and releases should be handled
+import {staticServer} from './services/staticServer';
+import {songEmitter, indicateState} from './services/button';
+import {alexaRouter} from './services/alexaRouter';
 
-const fs = require('fs');
+const express = require('express');
+const http = require('http');
 const https = require('https');
-
-const express = require("express");
+const path = require('path');
+const isPi = require('detect-rpi');
+const player = require('play-sound')();
+const lineByLine = require('n-readlines');
+const performance = require('perf_hooks').performance;
 const verifier = require('alexa-verifier-middleware');
+const bodyParser = require('body-parser');
+const Socket = require('socket.io');
+
 const app = express();
-const PORT = process.env.PORT || 3000;
-const FredRouter = require("./FredRouter");
-const bodyParser = require("body-parser");
 
 // Certificate
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/api.danleach.dev/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/api.danleach.dev/cert.pem', 'utf8');
-const ca = fs.readFileSync('/etc/letsencrypt/live/api.danleach.dev/chain.pem', 'utf8');
+const privateKey = readFileSync(
+    '/etc/letsencrypt/live/api.danleach.dev/privkey.pem',
+    'utf8'
+);
+const certificate = readFileSync(
+    '/etc/letsencrypt/live/api.danleach.dev/cert.pem',
+    'utf8'
+);
+const ca = readFileSync(
+    '/etc/letsencrypt/live/api.danleach.dev/chain.pem',
+    'utf8'
+);
 
 const credentials = {
-	key: privateKey,
-	cert: certificate,
-	ca: ca
+  key: privateKey,
+  cert: certificate,
+  ca: ca,
 };
 
-app.use(verifier);
-app.use(bodyParser.json());
-app.use("/fred", FredRouter);
+
+const server = http.createServer(staticServer);
+const io = new Socket(server);
 
 // Starting both http & https servers
 const httpServer = http.createServer(app);
 const httpsServer = https.createServer(credentials, app);
 
 httpServer.listen(80, () => {
-	console.log('HTTP Server running on port 80');
+  console.log('HTTP Server running on port 80');
 });
 
 httpsServer.listen(443, () => {
-	console.log('HTTPS Server running on port 443');
+  console.log('HTTPS Server running on port 443');
 });
+
+app.use(verifier);
+app.use(bodyParser.json());
+app.use('/fred', alexaRouter);
 
 let audio = null;
 
 const port = 8080;
-socket.listen(parseInt(port));
+server.listen(parseInt(port));
 console.info(`Ready to do your bidding on port ${port}`);
 
-const songDefinitions = loadObject("./configuration/songDefinitions.json");
+const songDefinitions = loadObject('./configuration/songDefinitions.json');
 const servoDefinitions = loadConfiguration(
-  "./configuration/servoDefinitions.json"
+    './configuration/servoDefinitions.json'
 );
 
 let lineReader = null;
 let nextLine = null;
 
-let state = {
+const state = {
   startTime: null,
   mode: mode.Idle,
-  songDefinition: null
+  songDefinition: null,
 };
 
-io.sockets.on("connection", function(socket) {
+io.sockets.on('connection', function(socket) {
   setTimeout(function() {
-    socket.emit("send servoDefinitions", servoDefinitions);
-    socket.emit("send songDefinitions", songDefinitions);
+    socket.emit('send servoDefinitions', servoDefinitions);
+    socket.emit('send songDefinitions', songDefinitions);
   }, 500);
 
   songDefinitions.forEach(function(song) {
@@ -101,26 +109,11 @@ io.sockets.on("connection", function(socket) {
 
 setInterval(moveServos(), 10);
 setInterval(playback(), 10);
-setInterval(blinkState(), 200);
 
-let blinkValue = 0;
-let lastState = -1;
+setInterval(indicateState(state), 200);
 
-pushButton.watch(function(err, value) {
-  //Watch for hardware interrupts on pushButton GPIO, specify callback function
-  if (err) {
-    //if an error
-    console.error("There was an error", err); //output error message to console
-    return;
-  }
-  if (value !== lastState) {
-    lastState = value;
-    if (value === 0) {
-      var song =
-        songDefinitions[Math.floor(Math.random() * songDefinitions.length)];
-      startSong(song, "play");
-    }
-  }
+songEmitter.on('songRequested', () => {
+  startSong(songDefinitions[Math.floor(Math.random() * songDefinitions.length)], 'play');
 });
 
 /**
@@ -133,41 +126,25 @@ function startSong(song, data) {
       audio = null;
     }
     audio = player.play(
-      path.join(process.cwd(), "assets", song.fileName),
-      function(err) {
-        console.log("oops" + JSON.stringify(err));
-        if (err && !err.killed) throw err;
-      }
+        path.join(process.cwd(), 'assets', song.fileName),
+        function(err) {
+          console.log('oops' + JSON.stringify(err));
+          if (err && !err.killed) throw err;
+        }
     );
   }
   state.startTime = performance.now();
   state.songDefinition = song;
-  state.mode = data === "play" ? mode.Playing : mode.Recording;
+  state.mode = data === 'play' ? mode.Playing : mode.Recording;
   const moveFile = path.join(
-    process.cwd(),
-    state.songDefinition.fileName + ".move"
+      process.cwd(), 'assets',
+      state.songDefinition.fileName + '.move'
   );
   if (state.mode === mode.Playing && existsSync(moveFile)) {
     lineReader = new lineByLine(moveFile);
   } else {
     lineReader = null;
   }
-}
-
-/**
- * Blinks to show what's up
- */
-function blinkState() {
-  return function() {
-    if (state.mode === mode.Playing) {
-      LED.writeSync(1);
-    } else if (state.mode === mode.Recording) {
-      LED.writeSync(blinkValue);
-      blinkValue = 1 - blinkValue;
-    } else {
-      LED.writeSync(0);
-    }
-  };
 }
 
 /**
@@ -179,15 +156,15 @@ function playback() {
       return;
     }
 
-    if (typeof lineReader === "undefined" || lineReader === null) {
+    if (typeof lineReader === 'undefined' || lineReader === null) {
       state.mode = mode.Idle;
       return;
     }
 
-    if (typeof nextLine === "undefined" || nextLine === null) {
+    if (typeof nextLine === 'undefined' || nextLine === null) {
       state.startTime = performance.now();
-      const dataLine = lineReader.next().toString("ascii");
-      if (dataLine === "false") {
+      const dataLine = lineReader.next().toString('ascii');
+      if (dataLine === 'false') {
         state.mode = mode.Idle;
         nextLine = null;
         return;
@@ -200,14 +177,14 @@ function playback() {
       for (let i = 1; i < servoDefinitions.length; i++) {
         servoDefinitions[i - 1].desiredPosition = nextLine[i];
         io.sockets.emit(
-          servoDefinitions[i - 1].id,
-          servoDefinitions[i - 1].currentPosition
+            servoDefinitions[i - 1].id,
+            servoDefinitions[i - 1].currentPosition
         );
       }
 
-      const dataLine = lineReader.next().toString("ascii");
+      const dataLine = lineReader.next().toString('ascii');
       console.log(dataLine);
-      if (dataLine === "false") {
+      if (dataLine === 'false') {
         state.mode === mode.Idle;
         nextLine = null;
         return;
@@ -241,12 +218,12 @@ function moveServos() {
           state.mode = mode.Idle;
         } else {
           const positions = servoDefinitions.map(
-            servo => servo.currentPosition
+              (servo) => servo.currentPosition
           );
           positions.unshift(offset);
           appendFileSync(
-            path.join(process.cwd(), state.songDefinition.fileName + ".move"),
-            JSON.stringify(positions) + "\n"
+              path.join(process.cwd(), 'assets', state.songDefinition.fileName + '.move'),
+              JSON.stringify(positions) + '\n'
           );
         }
       }
@@ -254,10 +231,13 @@ function moveServos() {
   };
 }
 
-process.on("SIGINT", unexportOnClose); //function to run when user closes using ctrl+c
+process.on('SIGINT', unexportOnClose); // function to run when user closes using ctrl+c
 
+/**
+ * Resets before closing
+ */
 function unexportOnClose() {
-  //function to run when exiting program
+  // function to run when exiting program
   LED.writeSync(0); // Turn LED off
   LED.unexport(); // Unexport LED GPIO to free resources
   pushButton.unexport(); // Unexport Button GPIO to free resources
@@ -268,7 +248,7 @@ function unexportOnClose() {
  * @param {servoDefinition} servoDefinitions
  */
 function reset(servoDefinitions) {
-  if (typeof serverDefinitions !== "undefined") {
+  if (typeof serverDefinitions !== 'undefined') {
     servoDefinitions.forEach(function(servo) {
       if (server.gpio !== null) {
         servo.gpio.destroy();
@@ -289,13 +269,13 @@ function loadConfiguration(configPath) {
 
   if (isPi()) {
     servoDefinitions.forEach(function(servo) {
-      servo.gpio = new Gpio(servo.pinNumber, { mode: Gpio.OUTPUT });
+      servo.gpio = new Gpio(servo.pinNumber, {mode: Gpio.OUTPUT});
       servo.gpio.servoWrite(servo.currentPosition);
     });
   }
 
   if (io.sockets.sockets.length > 0) {
-    io.sockets.emit("send servoDefinitions", servoDefinitions);
+    io.sockets.emit('send servoDefinitions', servoDefinitions);
   }
   return servoDefinitions;
 }

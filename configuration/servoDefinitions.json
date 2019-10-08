@@ -11,21 +11,21 @@
   "desiredPosition": 1300
  },
  {
-  "pinNumber": 13,
+  "pinNumber": 5,
   "id": "tilt",
   "description": "tilt",
   "minValue": 1100,
-  "maxValue": 1600,
-  "centerPosition": 1434,
+  "maxValue": 1400,
+  "centerPosition": 1250,
   "maxMove": 10,
-  "currentPosition": 1434,
-  "desiredPosition": 1434
+  "currentPosition": 1250,
+  "desiredPosition": 1250
  },
  {
-  "pinNumber": 5,
+  "pinNumber": 13,
   "id": "nod",
   "description": "nod",
-  "minValue": 1100,
+  "minValue": 600,
   "maxValue": 1600,
   "centerPosition": 1285,
   "maxMove": 10,
