@@ -1,7 +1,8 @@
 import eu.mihosoft.vrl.v3d.*
 import eu.mihosoft.vrl.v3d.ext.quickhull3d.HullUtil
-import java.nio.file.Path
-import java.nio.file.Paths
+import eu.mihosoft.vrl.v3d.io.ScriptingEngine
+import eu.mihosoft.vrl.v3d.util.Scripts3D
+import eu.mihosoft.vvecmath.Vector3d
 
 CSG eyesocket() {
     return new Sphere(40).difference(
@@ -11,16 +12,18 @@ CSG eyesocket() {
 }
 
 CSG servo() {
-    List<CSG> servoParts = []
-    servoParts << new Cylinder(6, 6).move(0, 0, 40)
-    servoParts << (new Cube(20, 42, 40).move(-10, -10, 0) +
-                  new Cube(20, 55, 3).move(0, -6, 30))
-    servoParts << new Cylinder(6, 100).move(0, -11, 0)
-    servoParts << new Cylinder(9, 100).move(0, -25, 0)
-    servoParts << new Cylinder(4, 100).move(-5, -13, 0)
-    servoParts << new Cylinder(4, 100).move(5, -13, 0)
-    servoParts << new Cylinder(4, 100).move(-5, -13 + 48, 0)
-    servoParts << new Cylinder(4, 100).move(5, -13 + 48, 0)
+    def servoParts = [
+        new Cylinder(6, 6).move(0, 0, 40),
+        new Cube(20, 42, 40).move(-10, -10, 0).union(
+            new Cube(20, 55, 3).move(0, -6, 30)
+        ),
+        new Cylinder(6, 100).move(0, -11, 0),
+        new Cylinder(9, 100).move(0, -25, 0),
+        new Cylinder(4, 100).move(-5, -13, 0),
+        new Cylinder(4, 100).move(5, -13, 0),
+        new Cylinder(4, 100).move(-5, -13 + 48, 0),
+        new Cylinder(4, 100).move(5, -13 + 48, 0)
+    ]
     
     return CSG.unionAll(servoParts)
 }
@@ -40,21 +43,22 @@ CSG mouthServoMount() {
 }
 
 CSG teensyMount() {
-    List<CSG> teensyMountParts = []
-    teensyMountParts << new Cylinder(20, 3).move(-47, -5, 30)
-    teensyMountParts << new Cylinder(20, 3).move(-47 + 25, -5, 30)
-    teensyMountParts << new Cylinder(20, 3).move(-47, -5 + 65, 30)
-    teensyMountParts << new Cylinder(20, 3).move(-47 + 25, -5 + 65, 30)
+    def teensyMountParts = [
+        new Cylinder(20, 3).move(-47, -5, 30),
+        new Cylinder(20, 3).move(-47 + 25, -5, 30),
+        new Cylinder(20, 3).move(-47, -5 + 65, 30),
+        new Cylinder(20, 3).move(-47 + 25, -5 + 65, 30)
+    ]
     
     return CSG.unionAll(teensyMountParts)
 }
 
-CSG skull() {
+def skull = {
     CSG skullTop = CSG.unionAll(
         eyesocket().move(-25, -52, 64).roty(270),
         eyesocket().move(-25 + 53, -52, 64).roty(270),
         new Cylinder(40, 55).toCSG().move(0, 0, -26 + 25).difference(
-            CSG.fromSTL(loadSTL("https://gist.githubusercontent.com/madhephaestus/50d40376ff09d23de63c/raw/5980b8e4bf9024e179fd723fd29711b5e15eb0ab/skull_bottom_cut.stl")).move(0, 0, -26 + 25)
+            CSG.fromSTL(ScriptingEngine.fileFromGit("https://gist.github.com/madhephaestus/50d40376ff09d23de63c.git", "skull_bottom_cut.stl")).move(0, 0, -26 + 25)
         ).move(0, 10, 85).rotz(43).scale(1.7, 1.7, 1.7)
     )
 
@@ -74,5 +78,7 @@ CSG skull() {
     return skullTop.difference(skullBottom)
 }
 
-def result = skull()
+def skullFile = ScriptingEngine.fileFromGit("https://gist.github.com/madhephaestus/50d40376ff09d23de63c.git", "skull.stl")
+def skullVitamin = Vitamins.get(skullFile)
+def result = skullVitamin.toCSG()
 result
