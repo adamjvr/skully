@@ -3,6 +3,7 @@ import eu.mihosoft.vrl.v3d.ext.quickhull3d.HullUtil
 import eu.mihosoft.vrl.v3d.io.ScriptingEngine
 import eu.mihosoft.vrl.v3d.util.Scripts3D
 import eu.mihosoft.vvecmath.Vector3d
+import java.nio.file.Paths
 
 CSG eyesocket() {
     return new Sphere(40).difference(
@@ -58,7 +59,7 @@ def skull = {
         eyesocket().move(-25, -52, 64).roty(270),
         eyesocket().move(-25 + 53, -52, 64).roty(270),
         new Cylinder(40, 55).toCSG().move(0, 0, -26 + 25).difference(
-            CSG.fromSTL(ScriptingEngine.fileFromGit("https://gist.github.com/madhephaestus/50d40376ff09d23de63c.git", "skull_bottom_cut.stl")).move(0, 0, -26 + 25)
+            CSG.fromSTL(loadSTL("skull_bottom_cut.stl")).move(0, 0, -26 + 25)
         ).move(0, 10, 85).rotz(43).scale(1.7, 1.7, 1.7)
     )
 
@@ -78,7 +79,7 @@ def skull = {
     return skullTop.difference(skullBottom)
 }
 
-def skullFile = ScriptingEngine.fileFromGit("https://gist.github.com/madhephaestus/50d40376ff09d23de63c.git", "skull.stl")
+def skullFile = Paths.get("skull.stl").toFile()
 def skullVitamin = Vitamins.get(skullFile)
 def result = skullVitamin.toCSG()
 result
