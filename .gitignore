@@ -3,3 +3,10 @@ node_modules
 assets/
 
 .well-known/acme-challenge/
+
+/.settings
+/.project
+/.classpath
+/.cproject
+/cache/
+/*.class
